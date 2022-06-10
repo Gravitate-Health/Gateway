@@ -261,7 +261,7 @@ limitations under the License.
 Authors and history
 ---------------------------
 
-- Álvaro Belmar (@abelmarm)
+- Álvaro Belmar ([@abelmarm](https://github.com/abelmarm))
 
 Acknowledgments
 ---------------
