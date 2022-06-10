@@ -84,7 +84,7 @@ serviceEndpoints:
   loopback-health-wellbeing:  
     url: "http://health-wellbeing:3000"
   loopback-health-wellbeing-interface:  
-    url: "http://loopback-health-wellbeing-interface:3000"
+    url: "http://health-wellbeing-interface:3000"
   prometheus:  
     url: "http://prometheus:9090"
   grafana:  

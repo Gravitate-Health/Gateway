@@ -15,8 +15,8 @@ Table of contents
     - [Kubernetes deployment](#kubernetes-deployment)
       - [Expose the gateway to the outside of the cluster](#expose-the-gateway-to-the-outside-of-the-cluster)
   - [Usage](#usage)
-    - [Basic operation](#basic-operation)
-    - [Additional options](#additional-options)
+    - [Example operation](#example-operation)
+    - [Runtime addition of new APIs](#runtime-addition-of-new-apis)
   - [Known issues and limitations](#known-issues-and-limitations)
   - [Getting help](#getting-help)
   - [Contributing](#contributing)
@@ -41,7 +41,7 @@ The gateway can be installed in two possible ways, a local installation and a Ku
 For the local deployment first clone this repository and cd into it:
 
 ```bash
-git clone <repo>
+git clone https://github.com/Gravitate-Health/Gateway.git
 cd gateway
 ```
 
@@ -59,7 +59,7 @@ The gateway will start proxying the services at `http://localhost:8080`.
 For the Kubernetes deployment first of all the gateway must be compiled into a docker image and uploaded into a registry accessible by the Kubernetes cluster:
 
 ```bash
-git clone <repo>
+git clone https://github.com/Gravitate-Health/Gateway.git
 cd gateway
 docker build . -t <docker-registry>/gateway:latest
 docker push <docker-registry>/gateway-latest
@@ -113,26 +113,129 @@ In the case of this service the service type is NodePort, which will make th ser
 
 #### Expose the gateway to the outside of the cluster
 
+In order to expose the gateway to the outside of the cluster an [Ingress Kubernetes](https://kubernetes.io/docs/concepts/services-networking/ingress/) resource is needed. In this repository there are examples of both [non-TLS](YAMLs/ingress.yaml) and [TLS](YAMLs/ingress-tls.yaml). As the gateway does not terminate TLS it is recommended to deploy and Ingress with TLS enabled, in our case we used Lets encrypt to generate the certificates.
+
+To install the Ingress the process is the same as the deployment and service:
+
+```bash
+kubectl apply -f YAMLs/ingress-tls.yaml
+```
+
+If there are no errors the entry point to the platform will be available at your DNS name.
+
 Usage
 -----
 
-### Basic operation
+The usage of the Gateway is limited to the usage of the services it proxies. You can also use the admin API to add new services at runtime, if open.
 
+### Example operation
 
-### Additional options
+In the following example we will use the Gateway to send a request to the FHIR server, protected behind authentication:
 
+First, we need to obtain the authorization token from Keycloak. For that, we need to send a POST request with the login info to the token provider of Keycloak, which in our case is accesible behind the Gateway.
+
+The parameters are the following:
+- client_id: GravitateHealth
+- grant_type: password
+- username: \<username>
+- password: \<password>
+
+A request example:
+
+```bash
+curl --location --request POST 'https://<url>/realms/GravitateHealth/protocol/openid-connect/token' \
+--header 'Content-Type: application/x-www-form-urlencoded' \
+--data-urlencode 'client_id=GravitateHealth' \
+--data-urlencode 'grant_type=password' \
+--data-urlencode 'username=myuser' \
+--data-urlencode 'password=mypassword'
+```
+
+The response should look like this:
+
+```JSON
+{
+    "access_token": "<TOKEN>",
+    "expires_in": 300,
+    "refresh_expires_in": 1800,
+    "refresh_token": "<REFRESH_TOKEN>",
+    "token_type": "Bearer",
+    "not-before-policy": 0,
+    "session_state": "48b9d271-2858-47bc-b6b8-a36e5afe9d0c",
+    "scope": "email profile"
+}
+```
+
+- **access_token**: Using this token in the authorization header will grant access to the rest of the services. 
+- **expires_in**: Time in seconds for the access token to expire
+- **refresh_expires_in**: Time in seconds for the refresh token to expire
+- **refresh_token**: Can be used to request a new access token without the need of inputting the user credentials again. The request is to the same URL as the token, but with the following parameters:
+refresh_token: <refresh_token>
+  - grant_type: refresh_token
+  - client_id: GravitateHealth
+  - token_type: The type of the token, in our case “Bearer”
+- **not-before-policy**: This policy ensures that any tokens issued before that time become invalid, in our case 0
+- **session_state**: ID of the session
+- **scope**: Scopes of the user, basically the roles permissions
+
+Once we have the token we can now query the FHIR server for its metadata component, for example.
+
+```bash
+curl --location --request GET 'https://<url>/fhir/metadata' \
+--header 'Authorization: Bearer <TOKEN>'
+```
+
+### Runtime addition of new APIs
+
+In order to add a new API to the Gateway 3 objects have to be created, a service endpoint, a pipeline and an API endpoint. The following is an example of the FHIR server.
+
+- Service endpoint: The url to proxy
+```JSON
+{
+  "url":"http://fhir-server:8080"
+}
+```
+- Pipeline: The policies flow, for example, first rewrite, then auth, then proxy.
+```JSON
+{
+  "apiEndpoints":["fhir-server"],
+  "policies":[{
+    "cors": "",
+    "keycloak-protect": "",
+    "proxy":[{
+      "action":{
+        "changeOrigin": false,
+        "xfwd": true,
+        "serviceEndpoint": "fhir-server"
+        }
+    }]
+  }]
+}
+```
+- API endpoint: The API endpoints to proxy.
+```JSON
+{
+  "host":"*",
+  "paths":["/fhir/*"]
+}
+```
+
+The documentation for this operation can be found in the [official documentation](https://www.express-gateway.io/docs/admin/) of Express Gateway.
 
 Known issues and limitations
 ----------------------------
 
+There is no persistence to the APIs added at runtime, meaning that if the pod were to restart those changes will be lost. It also shouldn't be used with more than one replica if planning to add APIs at runtime, as the load balancer might redirect the requests to different pods.
 
 Getting help
 ------------
 
+In case you find a problem or you need extra help, please use the issues tab to report the issue.
 
 Contributing
 ------------
 
+To contribute, fork this repository and send a pull request with the changes squashed.
 
 License
 -------
@@ -158,6 +261,11 @@ limitations under the License.
 Authors and history
 ---------------------------
 
+- Álvaro Belmar (@abelmarm)
 
 Acknowledgments
 ---------------
+
+- https://www.keycloak.org/docs/latest/securing_apps/
+- https://www.express-gateway.io/docs/
+- https://kubernetes.io/docs/home/
