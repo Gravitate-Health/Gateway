@@ -2,11 +2,7 @@
 Gravitate Health Gateway: Express Gateway
 =================================================
 
-[![Latest release](https://img.shields.io/github/v/release/mhucka/readmine.svg&color=b44e88)](https://github.com/mhucka/readmine/releases)
-[![Python](https://img.shields.io/badge/python-v3.6+-blue.svg)]()
-[![Build Status](https://travis-ci.org/anfederico/clairvoyant.svg?branch=master)](https://travis-ci.org/anfederico/clairvoyant)
-[![Tests](https://img.shields.io/jenkins/tests?compact_message)]()
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
 Table of contents
 -----------------
