@@ -1,92 +1,203 @@
-# Gateway
 
+Gravitate Health Gateway: Express Gateway
+=================================================
 
+[![Latest release](https://img.shields.io/github/v/release/mhucka/readmine.svg&color=b44e88)](https://github.com/mhucka/readmine/releases)
+[![Python](https://img.shields.io/badge/python-v3.6+-blue.svg)]()
+[![Build Status](https://travis-ci.org/anfederico/clairvoyant.svg?branch=master)](https://travis-ci.org/anfederico/clairvoyant)
+[![Tests](https://img.shields.io/jenkins/tests?compact_message)]()
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
-## Getting started
+Table of contents
+-----------------
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+- [Gravitate Health Gateway: Express Gateway](#gravitate-health-gateway-express-gateway)
+  - [Table of contents](#table-of-contents)
+  - [Introduction](#introduction)
+  - [Installation](#installation)
+    - [Local installation](#local-installation)
+    - [Kubernetes deployment](#kubernetes-deployment)
+      - [Expose the gateway to the outside of the cluster](#expose-the-gateway-to-the-outside-of-the-cluster)
+  - [Usage](#usage)
+    - [Basic operation](#basic-operation)
+    - [Additional options](#additional-options)
+  - [Known issues and limitations](#known-issues-and-limitations)
+  - [Getting help](#getting-help)
+  - [Contributing](#contributing)
+  - [License](#license)
+  - [Authors and history](#authors-and-history)
+  - [Acknowledgments](#acknowledgments)
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
+Introduction
+------------
 
-## Add your files
+[Express Gateway](https://github.com/ExpressGateway/express-gateway) is a microservices API gateway implemented using Express.js, it allows the dynamic addition of new services to the gateway without the need of restarting the service, using its admin [API](https://www.express-gateway.io/docs/admin/). 
 
-- [ ] [Create](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#create-a-file) or [upload](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#upload-a-file) files
-- [ ] [Add files using the command line](https://docs.gitlab.com/ee/gitlab-basics/add-file.html#add-a-file-using-the-command-line) or push an existing Git repository with the following command:
+This repository contains the files needed for the compilation of the Gravitate Health Gateway, implemented using the Express Gateway framework. It also contains the files for its deployment in a Kubernetes cluster, as well as the instructions to be followed. As the gateway implements a JWT auth scheme using OIDC ([Keycloak](https://github.com/keycloak/keycloak)) the instructions for the procurement of the token will also be provided.
 
+Installation
+------------
+
+The gateway can be installed in two possible ways, a local installation and a Kubernetes deployment. The local one should be only used for testing, or middleware development.
+
+### Local installation
+
+For the local deployment first clone this repository and cd into it:
+
+```bash
+git clone <repo>
+cd gateway
 ```
-cd existing_repo
-git remote add origin https://gitlab.lst.tfo.upm.es/gravite-health/development-artifacts/gateway.git
-git branch -M main
-git push -uf origin main
+
+After that you can change the files [gateway.config.yml](config/gateway.config.yml) and [system.config.yml](config/system.config.yml) to fit your testing needs. Once done that, install the dependencies and run using NPM:
+
+```bash
+npm install
+npm start
 ```
 
-## Integrate with your tools
+The gateway will start proxying the services at `http://localhost:8080`.
 
-- [ ] [Set up project integrations](https://gitlab.lst.tfo.upm.es/gravite-health/development-artifacts/gateway/-/settings/integrations)
+### Kubernetes deployment
 
-## Collaborate with your team
+For the Kubernetes deployment first of all the gateway must be compiled into a docker image and uploaded into a registry accessible by the Kubernetes cluster:
 
-- [ ] [Invite team members and collaborators](https://docs.gitlab.com/ee/user/project/members/)
-- [ ] [Create a new merge request](https://docs.gitlab.com/ee/user/project/merge_requests/creating_merge_requests.html)
-- [ ] [Automatically close issues from merge requests](https://docs.gitlab.com/ee/user/project/issues/managing_issues.html#closing-issues-automatically)
-- [ ] [Enable merge request approvals](https://docs.gitlab.com/ee/user/project/merge_requests/approvals/)
-- [ ] [Automatically merge when pipeline succeeds](https://docs.gitlab.com/ee/user/project/merge_requests/merge_when_pipeline_succeeds.html)
+```bash
+git clone <repo>
+cd gateway
+docker build . -t <docker-registry>/gateway:latest
+docker push <docker-registry>/gateway-latest
+```
 
-## Test and Deploy
+The name of the image is specified in the gateway deployment file, [gateway_deployment.yaml](YAMLs/gateway_deployment.yaml). In that file you can also specify a registry secret in case the registry is behind authorization. Here is the documentation regarding [private registries](https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/).
 
-Use the built-in continuous integration in GitLab.
+The deployment file contains several environment variables which can be modified:
 
-- [ ] [Get started with GitLab CI/CD](https://docs.gitlab.com/ee/ci/quick_start/index.html)
-- [ ] [Analyze your code for known vulnerabilities with Static Application Security Testing(SAST)](https://docs.gitlab.com/ee/user/application_security/sast/)
-- [ ] [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/ee/topics/autodevops/requirements.html)
-- [ ] [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/ee/user/clusters/agent/)
-- [ ] [Set up protected environments](https://docs.gitlab.com/ee/ci/environments/protected_environments.html)
+| Environment Variable | description                                              | default                                 |
+|----------------------|----------------------------------------------------------|-----------------------------------------|
+| LOG_LEVEL            | Logs verbose levels                                      | debug                                   |
+| GH_REALM             | Keycloak realm used for authentication and authorization | GravitateHealth                         |
+| AUTH_SERVER          | URL of the authentication and authorization server       | https://gravitate-health.lst.tfo.upm.es |
+| SSL_REQ              | SSL required for the authorization redirects             | external                                |
+| CLIENT_ID            | ID of the Keycloak client                                | GravitateHealth                         |
+| PUBLIC_CLIENT        | If the Keycloak client is public                         | true                                    |
+| CONFIDENTIAL_PORT    | In case the Keycloak is confidential, which port         | 0                                       |
 
-***
+The next step is to apply the Kubernetes files in the cluster, the services will be deployed in the development namespace. In case the namespace has not been created before you can create it with the following commands, or change the name in metadata.namespace:
 
-# Editing this README
+```bash
+kubectl create namespace <namespace>                         # Only if namespace not created and/or the current context
+kubectl config set-context --current --namespace=<namespace> # Only if namespace not created and/or the current context
 
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!).  Thank you to [makeareadme.com](https://www.makeareadme.com/) for this template.
+kubectl apply -f YAMLs/gateway_deployment.yaml
+kubectl apply -f YAMLs/gateway_service.yaml
+```
 
-## Suggestions for a good README
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
+You can check if the deployment is ready by running:
 
-## Name
-Choose a self-explaining name for your project.
+```bash
+kubectl get pod | grep "gateway"
+```
+```bash
+NAMESPACE            NAME                                         READY   STATUS    RESTARTS        AGE
+<namespace>          gateway-6db6b64d5f-tqljd                     1/1     Running   0               10s
+```
 
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
+If the pod is ready you can access the service by other services in the same namespace by using the name of its Kubernetes service and the port (especified in [gateway_service.yaml](YAMLs/gateway_service.yaml)). You can also obtain both by running the following commands:
 
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
+```bash
+kubectl get svc | grep "gateway"
+```
+```bash
+NAME      TYPE       CLUSTER-IP       EXTERNAL-IP   PORT(S)          AGE
+gateway   NodePort   10.108.141.168   <none>        8080:32036/TCP   28s
+```
 
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
+In the case of this service the service type is NodePort, which will make th service available directly in the machine running the cluster at ```http://<machine-ip>:<nodePort>```. This should only be used for testing, for production environments the type should be changed to ClusterIP, which will only expose the service internally to the cluster. Moreover, if the Kubernetes cluster has a DNS manager other services can access services in other namespaces using the following URL: ```http://<service-name>.<namespace>.svc.cluster.local```. To learn more about the types of services and its uses in Kubernetes, here is the [official documentation](https://kubernetes.io/docs/concepts/services-networking/).
 
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
+#### Expose the gateway to the outside of the cluster
 
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
 
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
 
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
+Usage
+-----
 
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
+This section explains the principles behind this README file.  If this repository were for actual _software_, this [Usage](#usage) section would explain more about how to run the software, what kind of output or behavior to expect, and so on.
 
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
+### Basic operation
 
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
+A suggested approach for using this example README file is as follows:
 
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
+1. Copy the [source file](README.md) for this file to your repository and commit it to your version control system
+2. Delete all the body text but keep the section headings
+3. Write your README content
+4. Commit the new text to your version control system
+5. Update your README file as your software evolves
 
-## License
-For open source projects, say how it is licensed.
+The first paragraph in the README file (under the title at the very top) should summarize your software in a concise fashion, preferably using no more than one or two sentences.
 
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+<p align="center"><img width="80%" src=".graphics/screenshot-top-paragraph.png"></p>
+
+The space under the first paragraph and _before_ the [Table of Contents](#table-of-contents) is a good location for optional [badges](https://github.com/badges/shields), which are small visual tokens commonly used on GitHub repositories to communicate project status, dependencies, versions, DOIs, and other information.  The particular badges and colors you use depend on your project and personal tastes.
+
+The [Introduction](#introduction) and [Usage](#usage) sections are described above.
+
+In the [Known issues and limitations](#known-issues) section, summarize any notable issues and/or limitations of your software.  The [Getting help](#getting-help) section should inform readers of how they can contact you, or at least, how they can report problems they may encounter.  The [Contributing](#contributing) section is optional; if your repository is for a project that accepts open-source contributions, then this section is where you can explain to readers how they can go about making contributions.
+
+The [License](#license) section should state any copyright asserted on the project materials as well as the terms of use of the software, files and other materials found in the project repository.  Finally, the [Authors and history](#authors-and-history) section should inform readers who the authors are; it is also a place where you can acknowledge other contributions to the work and the use of other people's software or tools.
+
+### Additional options
+
+Some projects need to communicate additional information to users and can benefit from additional sections in the README file.  It's difficult to give specific instructions &ndash; a lot depends on your software, your intended audience, etc.  Use your judgment and ask for feedback from users or colleagues to help figure out what else is worth explaining.
+
+
+Known issues and limitations
+----------------------------
+
+In this section, summarize any notable issues and/or limitations of your software.  If none are known yet, this section can be omitted (and don't forget to remove the corresponding entry in the [Table of Contents](#table-of-contents) too); alternatively, you can leave this section in and write something along the lines of "none are known at this time".
+
+
+Getting help
+------------
+
+Inform readers of how they can contact you, or at least how they can report problems they may encounter.  This may simply be a request to use the issue tracker on your repository, but many projects have associated chat or mailing lists, and this section is a good place to mention those.
+
+
+Contributing
+------------
+
+Mention how people can offer contributions, and point them to your guidelines for contributing.
+
+
+License
+-------
+
+This README file is distributed under the terms of the [Creative Commons 1.0 Universal license (CC0)](https://creativecommons.org/publicdomain/zero/1.0/).  The license applies to this file and other files in the [GitHub repository](http://github.com/mhucka/readmine) hosting this file. This does _not_ mean that you, as a user of this README file in your software project, must also use CC0 license!  You may use any license for your work that you see fit.
+
+
+Authors and history
+---------------------------
+
+In this section, list the authors and contributors to your software project.  (The original author of this file is [Mike Hucka](http://www.cds.caltech.edu/~mhucka/).)  Adding additional notes here about the history of the project can make it more interesting and compelling.
+
+
+Acknowledgments
+---------------
+
+If your work was funded by any organization or institution, acknowledge their support here.  In addition, if your work relies on other software libraries, or was inspired by looking at other work, it is appropriate to acknowledge this intellectual debt too.  For example, in the process of developing this file, I used not only my own ideas and experiences &ndash; I read many (sometimes contradictory) recommendations for README files and examined real READMEs in actual use, and tried to distill the best ideas into the result you see here.  Sources included the following:
+
+* http://tom.preston-werner.com/2010/08/23/readme-driven-development.html
+* https://changelog.com/posts/top-ten-reasons-why-i-wont-use-your-open-source-project
+* https://thoughtbot.com/blog/how-to-write-a-great-readme
+* http://jonathanpeelle.net/making-a-readme-file
+* https://github.com/noffle/art-of-readme
+* https://github.com/noffle/common-readme
+* https://github.com/RichardLitt/standard-readme
+* https://github.com/jehna/readme-best-practices
+* https://gist.github.com/PurpleBooth/109311bb0361f32d87a2
+* https://github.com/matiassingers/awesome-readme
+* https://github.com/cfpb/open-source-project-template
+* https://github.com/davidbgk/open-source-template/
+* https://www.makeareadme.com
+* https://github.com/lappleapple/feedmereadmes
+* https://github.com/badges/shields

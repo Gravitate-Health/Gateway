@@ -1,0 +1,239 @@
+http:
+  port: 8080
+admin:
+  port: 9876
+  host: localhost
+apiEndpoints:
+  fhir-server:
+    host: '*'
+    paths:
+      - /fhir/*
+  fhir-connector:
+    host: '*'
+    paths:
+      - /fhir-connector*
+  fhir-spor-connector:
+    host: '*'
+    paths:
+      - /fhir-spor-connector*
+  loopback-medication-info:
+    host: '*'
+    paths:
+      - /med-information*
+  loopback-medication-management:
+    host: '*'
+    paths:
+      - /med-management*
+  loopback-health-wellbeing:
+    host: '*'
+    paths:
+      - /health-wellbeing/*
+  loopback-health-wellbeing-interface:
+    host: '*'
+    paths:
+      - /health-wellbeing-interface*
+  prometheus:
+    host: '*'
+    paths:
+      - /prometheus*
+  grafana:
+    host: '*'
+    paths:
+      - /grafana*
+  lb-test:
+    host: '*'
+    paths:
+      - /lb-test*
+  keycloak:
+    host: '*'
+    paths:
+      - /realms
+      - /realms*
+  keycloak-admin:
+    host: '*'
+    paths:
+      - /
+      - /*
+serviceEndpoints:
+  keycloak: 
+    url: "http://keycloak:8080"
+  fhir-server:  
+    url: "http://fhir-server:8080"
+  fhir-connector:  
+    url: "http://fhir-connector:5000"
+  fhir-spor-connector:  
+    url: "http://fhir-spor-connector:3000"
+  loopback-medication-info:  
+    url: "http://med-info:3000"
+  loopback-medication-management:  
+    url: "http://med-management:3000"
+  loopback-health-wellbeing:  
+    url: "http://health-wellbeing:3000"
+  loopback-health-wellbeing-interface:  
+    url: "http://loopback-health-wellbeing-interface:3000"
+  prometheus:  
+    url: "http://prometheus:9090"
+  grafana:  
+    url: "http://grafana:3000"
+policies:
+  - basic-auth
+  - cors
+  - expression
+  - key-auth
+  - log
+  - oauth2
+  - proxy
+  - rate-limit
+  - keycloak-protect
+  - rewrite
+pipelines:
+  fhir-server:
+    apiEndpoints:
+      - fhir-server
+    policies:
+      - cors:
+      - keycloak-protect:
+      - proxy:
+          - action:
+              serviceEndpoint: fhir-server
+              changeOrigin: false
+              xfwd: true
+  fhir-connector:
+    apiEndpoints:
+      - fhir-connector
+    policies:
+      - cors:
+      - keycloak-protect: null
+      - rewrite:
+        - condition:
+            name: regexpmatch
+            match: ^/fhir-connector/(.*)$
+          action:
+            rewrite: /$1
+      - proxy:
+          - action:
+              serviceEndpoint: fhir-connector
+              changeOrigin: false
+              xfwd: true
+  loopback-medication-info:
+    apiEndpoints:
+      - loopback-medication-info
+    policies:
+      - cors:
+      - keycloak-protect: null
+      - rewrite:
+        - condition:
+            name: regexpmatch
+            match: ^/med-information/(.*)$
+          action:
+            rewrite: /$1
+      - proxy:
+          - action:
+              serviceEndpoint: loopback-medication-info
+              changeOrigin: false
+              xfwd: true  
+  loopback-medication-management:
+    apiEndpoints:
+      - loopback-medication-management
+    policies:
+      - cors:
+      - keycloak-protect: null
+      - rewrite:
+        - condition:
+            name: regexpmatch
+            match: ^/med-management/(.*)$
+          action:
+            rewrite: /$1
+      - proxy:
+          - action:
+              serviceEndpoint: loopback-medication-management
+              changeOrigin: false
+              xfwd: true  
+  loopback-health-wellbeing:
+    apiEndpoints:
+      - loopback-health-wellbeing
+    policies:
+      - cors:
+      - keycloak-protect: null
+      - rewrite:
+        - condition:
+            name: regexpmatch
+            match: ^/health-wellbeing/(.*)$
+          action:
+            rewrite: /$1
+      - proxy:
+          - action:
+              serviceEndpoint: loopback-health-wellbeing
+              changeOrigin: false
+              xfwd: true  
+  loopback-health-wellbeing-interface:
+    apiEndpoints:
+      - loopback-health-wellbeing-interface
+    policies:
+      - cors:
+      - keycloak-protect: null
+      - rewrite:
+        - condition:
+            name: regexpmatch
+            match: ^/health-wellbeing-interface/(.*)$
+          action:
+            rewrite: /$1
+      - proxy:
+          - action:
+              serviceEndpoint: loopback-health-wellbeing-interface
+              changeOrigin: false
+              xfwd: true  
+  prometheus:
+    apiEndpoints:
+      - prometheus
+    policies:
+      - cors:
+      - keycloak-protect: null
+      - rewrite:
+          - condition:
+              name: pathmatch
+              match: '/prometheus/:route*'
+            action:
+              rewrite: ':route'
+      - proxy:
+          - action:
+              serviceEndpoint: prometheus
+              changeOrigin: false
+              xfwd: true  
+  grafana:
+    apiEndpoints:
+      - grafana
+    policies:
+      - cors:
+      - keycloak-protect: null
+      - rewrite:
+          - condition:
+              name: pathmatch
+              match: '/grafana/:route*'
+            action:
+              rewrite: ':route'
+      - proxy:
+          - action:
+              serviceEndpoint: grafana
+              changeOrigin: false
+              xfwd: true
+  keycloak-admin:
+    apiEndpoints:
+      - keycloak-admin
+    policies:
+      - cors:
+      - proxy:
+          - action:
+              serviceEndpoint: keycloak
+              changeOrigin: false
+              xfwd: true
+  keycloak:
+    apiEndpoints:
+      - keycloak
+    policies:
+      - cors:
+      - proxy:
+          - action:
+              serviceEndpoint: keycloak
+              changeOrigin: false
+              xfwd: true

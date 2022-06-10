@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gateway
+  namespace: development
+  annotations:
+    prometheus.io/scrape: "true"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gateway
+  template:
+    metadata:
+      labels:
+        app: gateway
+    spec:
+      containers:
+      - name: gateway
+        image: localhost:32000/gateway:latest
+        ports:
+        - containerPort: 8080
+        env:
+        - name: LOG_LEVEL
+          value: debug
+        - name: GH_REALM
+          value: GravitateHealth
+        - name: AUTH_SERVER
+          value: https://gravitate-health.lst.tfo.upm.es
+        - name: SSL_REQ
+          value: external
+        - name: CLIENT_ID
+          value: GravitateHealth
+        - name: PUBLIC_CLIENT
+          value: "true"
+        - name: CONFIDENTIAL_PORT
+          value: "0"
+        - name: TIME
+          value: "8"

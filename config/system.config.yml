@@ -1,0 +1,35 @@
+# Core
+db:
+  redis:
+    emulate: true
+    namespace: EG
+    
+crypto:
+  cipherKey: sensitiveKey
+  algorithm: aes256
+  saltRounds: 10
+
+# OAuth2 Settings
+session:
+  secret: keyboard cat
+  resave: false
+  saveUninitialized: false
+accessTokens:
+  timeToExpiry: 7200000
+refreshTokens:
+  timeToExpiry: 7200000
+authorizationCodes:
+  timeToExpiry: 300000
+
+plugins:
+  express-gateway-keycloak:
+    package: express-gateway-keycloak
+    keycloakConfig:
+      realm: ${GH_REALM:-'GravitateHealth'}
+      auth-server-url: ${AUTH_SERVER:-'http://172.30.0.42:8081'}
+      ssl-required: ${SSL_REQ:-'external'}
+      client-id: ${CLIENT_ID:-'gravitate'}
+      public-client: ${PUBLIC_CLIENT:-'true'}
+      confidential-port: ${CONFIDENTIAL_PORT:-'0'}
+  rewrite:
+    package: express-gateway-plugin-rewrite
