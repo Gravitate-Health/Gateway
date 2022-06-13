@@ -79,7 +79,7 @@ The deployment file contains several environment variables which can be modified
 | PUBLIC_CLIENT        | If the Keycloak client is public                         | true                                    |
 | CONFIDENTIAL_PORT    | In case the Keycloak is confidential, which port         | 0                                       |
 
-The next step is to apply the Kubernetes files in the cluster, the services will be deployed in the development namespace. In case the namespace has not been created before you can create it with the following commands, or change the name in metadata.namespace:
+The next step is to apply the Kubernetes files in the cluster, the services will be deployed in the development namespace. In case the namespace has not been created before you can create it with the following commands, or change the name in `metadata.namespace`:
 
 ```bash
 kubectl create namespace <namespace>                         # Only if namespace not created and/or the current context
@@ -109,7 +109,7 @@ NAME      TYPE       CLUSTER-IP       EXTERNAL-IP   PORT(S)          AGE
 gateway   NodePort   10.108.141.168   <none>        8080:32036/TCP   28s
 ```
 
-In the case of this service the service type is NodePort, which will make th service available directly in the machine running the cluster at ```http://<machine-ip>:<nodePort>```. This should only be used for testing, for production environments the type should be changed to ClusterIP, which will only expose the service internally to the cluster. Moreover, if the Kubernetes cluster has a DNS manager other services can access services in other namespaces using the following URL: ```http://<service-name>.<namespace>.svc.cluster.local```. To learn more about the types of services and its uses in Kubernetes, here is the [official documentation](https://kubernetes.io/docs/concepts/services-networking/).
+In the case of this service the service type is NodePort, which will make the service available directly in the machine running the cluster at ```http://<machine-ip>:<nodePort>```. This should only be used for testing, for production environments the type should be changed to ClusterIP, which will only expose the service internally to the cluster. Moreover, if the Kubernetes cluster has a DNS manager other services can access services in other namespaces using the following URL: ```http://<service-name>.<namespace>.svc.cluster.local```. To learn more about the types of services and its uses in Kubernetes, here is the [official documentation](https://kubernetes.io/docs/concepts/services-networking/).
 
 #### Expose the gateway to the outside of the cluster
 
