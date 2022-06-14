@@ -62,7 +62,7 @@ For the Kubernetes deployment first of all the gateway must be compiled into a d
 git clone https://github.com/Gravitate-Health/Gateway.git
 cd gateway
 docker build . -t <docker-registry>/gateway:latest
-docker push <docker-registry>/gateway-latest
+docker push <docker-registry>/gateway:latest
 ```
 
 The name of the image is specified in the gateway deployment file, [gateway_deployment.yaml](YAMLs/gateway_deployment.yaml). In that file you can also specify a registry secret in case the registry is behind authorization. Here is the documentation regarding [private registries](https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/).
