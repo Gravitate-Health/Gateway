@@ -26,10 +26,6 @@ apiEndpoints:
     host: '*'
     paths:
       - /fhir-connector*
-  fhir-spor-connector:
-    host: '*'
-    paths:
-      - /fhir-spor-connector*
   loopback-medication-info:
     host: '*'
     paths:
@@ -54,10 +50,6 @@ apiEndpoints:
     host: '*'
     paths:
       - /grafana*
-  lb-test:
-    host: '*'
-    paths:
-      - /lb-test*
   keycloak:
     host: '*'
     paths:

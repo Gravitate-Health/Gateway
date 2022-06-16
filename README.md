@@ -126,7 +126,19 @@ If there are no errors the entry point to the platform will be available at your
 Usage
 -----
 
-The usage of the Gateway is limited to the usage of the services it proxies. You can also use the admin API to add new services at runtime, if open.
+The usage of the Gateway is limited to the usage of the services it proxies. You can also use the admin API to add new services at runtime, if open. It functions as a reverse proxy, terminating TLS for the services inside the cluster. In the table below you can find a list of services and the API endpoints to access them.
+
+|     Service                                     |     API Endpoint                   |
+|-------------------------------------------------|------------------------------------|
+|     FHIR Server                                 |     /fhir                          |
+|     FHIR Connector                              |     /fhir-connector                |
+|     G-Lens Medication Information               |     /med-information               |
+|     G-Lens Medication Management                |     /med-management                |
+|     G-Lens Health and Wellbeing file storage    |     /health-wellbeing              |
+|     G-Lens Health and Wellbeing   interface     |     /health-wellbeing-interface    |
+|     Prometheus                                  |     /prometheus                    |
+|     Grafana                                     |     /grafana                       |
+|     Keycloak                                    |     /realms                        |
 
 ### Example operation
 
