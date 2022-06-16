@@ -196,11 +196,11 @@ pipelines:
       - cors:
       - keycloak-protect: null
       - rewrite:
-          - condition:
-              name: pathmatch
-              match: '/prometheus/:route*'
-            action:
-              rewrite: ':route'
+        - condition:
+            name: regexpmatch
+            match: ^/prometheus/(.*)$
+          action:
+            rewrite: /$1
       - proxy:
           - action:
               serviceEndpoint: prometheus
@@ -213,11 +213,11 @@ pipelines:
       - cors:
       - keycloak-protect: null
       - rewrite:
-          - condition:
-              name: pathmatch
-              match: '/grafana/:route*'
-            action:
-              rewrite: ':route'
+        - condition:
+            name: regexpmatch
+            match: ^/grafana/(.*)$
+          action:
+            rewrite: /$1
       - proxy:
           - action:
               serviceEndpoint: grafana
