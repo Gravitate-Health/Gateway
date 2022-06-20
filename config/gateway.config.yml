@@ -41,7 +41,7 @@ apiEndpoints:
   loopback-health-wellbeing-interface:
     host: '*'
     paths:
-      - /health-wellbeing-interface*
+      - /health-wellbeing-directory*
   prometheus:
     host: '*'
     paths:
